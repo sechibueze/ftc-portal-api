@@ -86,12 +86,27 @@ Request.body :{
 }
 </code>
 </pre>
-  
 <pre><code>
 Response:
 {
     "status": true,
-    "message": "A verification code has been sent to validmail@gmail.com"
+    "message": "User signup successfully",
+    "data": {
+        "personal": {
+            "nationality": "Nigeria"
+        },
+        "isVerified": false,
+        "isAdmin": false,
+        "isGroupAdmin": false,
+        "createdAt": "2020-02-11T17:24:44.303Z",
+        "_id": "5e42e46d06da1723f033b8e3",
+        "firstname": "Wiz",
+        "lastname": "Ainna",
+        "email": "validemail@gmail.com",
+        "password": "$2a$10$EEdzoHwTQGw8Ec5FTx7a5OtZmpHkzzedCLGQCMmO1kS4/Ac4pm5tO",
+        "updatedAt": "2020-02-11T17:24:44.303Z",
+        "__v": 0
+    }
 }
 </code></pre>
 
@@ -101,8 +116,6 @@ Response:
 status: true,
 message: "The account has been verified. Please log in."
 }
-    status: true,
-  
 </code></pre>
 
 
@@ -288,4 +301,6 @@ Response:
 - Add feature to resend email verification token incase of loss or delay
 
 - Allow user to login in without verification but restrict edit access
+
+- Email sent with localhost but not with heroku
  
