@@ -73,8 +73,12 @@ router.post(
       // Password will be hashed before save() if it wasnt modified
       const user_ = await user.save();
       // console.log('Saved use to DB', user_)
-
-      sendEmail(user_, req, res);
+      res.json({
+        status: true,
+        message: 'User signup successfully',
+        data: user_
+      })
+      // sendEmail(user_, req, res);
 
     } catch (err) {
       console.log(err.message);
@@ -176,7 +180,7 @@ router.post(
         });
 
       // Make sure the user has been verified
-      if (!user.isVerified) return res.status(401).json({ status: false, message: 'Your account has not been verified.' });
+      // if (!user.isVerified) return res.status(401).json({ status: false, message: 'Your account has not been verified.' });
 
 
       const payload = {
