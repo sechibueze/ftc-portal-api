@@ -14,6 +14,39 @@ const User = require("../model/user");
 const Token = require("../model/token");
 const auth = require('../middleware/auth');
 
+// router.get('/email', (req, res) => {
+//   // emailer.js
+//   // const nodemailer = require('nodemailer');
+//   // const sendgridTransport = require('nodemailer-sendgrid-transport');
+//   // Configure Nodemailer SendGrid Transporter
+//   const transporter = nodemailer.createTransport(
+//     sendgridTransport({
+//       auth: {
+//         api_user: process.env.SENDGRID_API_USER,    // SG username
+//         api_key: process.env.SENDGRID_API_PASSWORD, // SG password
+//       },
+//     })
+//   );
+
+//   // Create Email Options
+//   const options = {
+//     to: '',
+//     from: '<from_email@domain.com>', // Totally up to you
+//     subject: ''<email_subject>'',
+//      html: '',             // For sending HTML emails
+//         };
+
+//         // Send Email
+//     transporter.sendEmail(options, (err, resp) => {
+//       if (err) {
+//                   // handle error
+//                 } else {
+//                   // handle success
+//                 }
+//     });
+// })
+
+
 /**
  * @method - POST
  * @param - /signup
@@ -71,13 +104,38 @@ router.post(
       });
 
       // Password will be hashed before save() if it wasnt modified
-      const user_ = await user.save();
-      // console.log('Saved use to DB', user_)
-      res.json({
-        status: true,
-        message: 'User signup successfully',
-        data: user_
-      })
+      let user_ = await user.save();
+      console.log('Saved use to DB', user_)
+      try {
+        // let user_ = user;
+        const { _id } = user_;
+
+        const payload = {
+          _id
+        };
+
+        jwt.sign(
+          payload,
+          process.env.JWT_SECRET,
+          {
+            expiresIn: 3600
+          },
+          (err, token) => {
+            if (err) throw err;
+            res.status(200).json({
+              status: true,
+              message: 'Signup success',
+              token
+            });
+          }
+        )
+      } catch (e) {
+        console.error(e);
+        res.status(500).json({
+          status: false,
+          error: "Server Error"
+        });
+      }
       // sendEmail(user_, req, res);
 
     } catch (err) {
@@ -94,7 +152,7 @@ router.get('/verify/:token', async (req, res) => {
   if (!req.params.token) {
     return res.status(400).json({
       status: false,
-      message: "We were unable to find a user for this token."
+      error: "Invalid route"
     })
   };
 
@@ -106,7 +164,7 @@ router.get('/verify/:token', async (req, res) => {
     if (!token) {
       return res.status(400).json({
         status: false,
-        message: 'We were unable to find a valid token. Your token may have expired.'
+        error: 'We were unable to find a valid token. Your token may have expired.'
       });
     }
 
@@ -127,10 +185,13 @@ router.get('/verify/:token', async (req, res) => {
       user.save(function (err) {
         if (err) return res.status(500).json({ message: err.message });
 
-        res.status(200).json({
+        return res.json({
           status: true,
-          message: "The account has been verified. Please log in."
-        });
+          message: 'Success verify',
+          data: user
+        })
+
+
       });
     });
   } catch (error) {
@@ -145,6 +206,7 @@ router.get('/verify/:token', async (req, res) => {
  * @param - /login
  * @description - User login
  */
+
 router.post(
   "/login",
   [
@@ -182,11 +244,12 @@ router.post(
       // Make sure the user has been verified
       // if (!user.isVerified) return res.status(401).json({ status: false, message: 'Your account has not been verified.' });
 
+      let user_ = user;
+      user_.password = null;
+      const { _id } = user_;
 
       const payload = {
-        user: {
-          id: user.id
-        }
+        _id
       };
 
       jwt.sign(
@@ -200,7 +263,6 @@ router.post(
           res.status(200).json({
             status: true,
             message: 'login - data complete ',
-            email,
             token
           });
         }
@@ -254,6 +316,7 @@ router.get('/users/:id', (req, res) => {
   User.findOne({ _id: req.params.id }, (err, user) => {
     if (err) return res.json({ status: false, error: 'cannot find users' });
     if (!user) return res.json({ status: false, error: 'No user with id' });
+    user.password = null;
     res.json({
       status: true,
       message: 'User found',
@@ -368,10 +431,7 @@ router.patch('/user/:userId/:section', (req, res) => {
         message: `Handle errors`
       });
       break;
-
   }
-
-
 });
 
 
@@ -379,7 +439,6 @@ function sendEmail(user, req, res) {
 
   console.log('SendEmail function called')
   token = user.generateVerificationToken();
-
   // Save the verification token
   token.save(function (err) {
     if (err) return res.status(500).json({ status: false, message: 'could not save token' });
